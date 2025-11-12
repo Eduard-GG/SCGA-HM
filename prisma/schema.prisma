@@ -19,7 +19,12 @@ model Usuario {
   nombreCompleto String
   email          String   @unique
   password       String
-  rol            String?
+  rol            String   @default("user")
+  // Permisos específicos para usuarios
+  canViewGastos         Boolean @default(true)
+  canViewGastosExternos Boolean @default(true)
+  canViewVehiculos      Boolean @default(true)
+  canViewUsuarios       Boolean @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }

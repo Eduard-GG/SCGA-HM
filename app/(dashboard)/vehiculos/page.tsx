@@ -45,6 +45,33 @@ import {
 } from "lucide-react";
 import VehiculosForm from "@/components/VehiculosForm/VehiculosForm";
 import EditVehiculosForm from "@/components/VehiculosForm/EditVehiculosForm";
+import axios from "axios";
+
+interface Vehiculo {
+  id: number;
+  marca: string | null;
+  tipo: string | null;
+  modelo: string | null;
+  color: string | null;
+  placas: string;
+  ubicacion: string | null;
+  motor: string | null;
+  serie: string;
+  eco: string | null;
+  contrato: string | null;
+  estatus: string | null;
+  agencia: string | null;
+  proyecto: string | null;
+}
+
+interface CurrentUser {
+  id: number;
+  rol: string;
+  canViewGastos: boolean;
+  canViewGastosExternos: boolean;
+  canViewVehiculos: boolean;
+  canViewUsuarios: boolean;
+}
 
 interface Vehiculo {
   id: number;
@@ -78,14 +105,26 @@ export default function VehiculosPage() {
   const [selectedVehiculo, setSelectedVehiculo] = useState<Vehiculo | null>(
     null
   );
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  // Obtener usuario actual
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await axios.get("/api/user");
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // Si no está autorizado, redirigir al login
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        window.location.href = "/login";
+      }
+    }
+  };
 
   const fetchVehiculos = async () => {
     try {
-      const response = await fetch("/api/vehiculos");
-      if (response.ok) {
-        const data = await response.json();
-        setVehiculos(data);
-      }
+      const response = await axios.get("/api/vehiculos");
+      setVehiculos(response.data);
     } catch (error) {
       console.error("Error fetching vehiculos:", error);
     } finally {
@@ -94,7 +133,11 @@ export default function VehiculosPage() {
   };
 
   useEffect(() => {
-    fetchVehiculos();
+    const loadData = async () => {
+      await fetchCurrentUser();
+      await fetchVehiculos();
+    };
+    loadData();
   }, []);
 
   // Filtrar vehículos según búsqueda y tipo
@@ -200,6 +243,24 @@ export default function VehiculosPage() {
             <p className="text-muted-foreground text-center">Cargando...</p>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  // Verificar permisos
+  if (!currentUser || !currentUser.canViewVehiculos) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Vehículos
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              No tienes permisos para acceder a esta sección.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

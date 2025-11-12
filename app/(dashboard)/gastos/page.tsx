@@ -44,11 +44,13 @@ import {
   Eye,
   Edit,
   Trash2,
+  Download,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import axios from "axios";
 import GastosForm from "@/components/GastosForm/GastosForm";
+import { exportToExcel } from "@/lib/exportToExcel";
 
 interface Gasto {
   id: number;
@@ -70,6 +72,15 @@ interface Gasto {
   updatedAt: Date;
 }
 
+interface CurrentUser {
+  id: number;
+  rol: string;
+  canViewGastos: boolean;
+  canViewGastosExternos: boolean;
+  canViewVehiculos: boolean;
+  canViewUsuarios: boolean;
+}
+
 const ITEMS_PER_PAGE = 10;
 
 export default function GastosPage() {
@@ -80,6 +91,21 @@ export default function GastosPage() {
   const [selectedGasto, setSelectedGasto] = useState<Gasto | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  // Obtener usuario actual
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await axios.get("/api/user");
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // Si no está autorizado, redirigir al login
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        window.location.href = "/login";
+      }
+    }
+  };
 
   // Cargar gastos
   const fetchGastos = async () => {
@@ -95,7 +121,11 @@ export default function GastosPage() {
   };
 
   useEffect(() => {
-    fetchGastos();
+    const loadData = async () => {
+      await fetchCurrentUser();
+      await fetchGastos();
+    };
+    loadData();
   }, []);
 
   // Filtrar gastos según búsqueda
@@ -230,6 +260,24 @@ export default function GastosPage() {
     );
   }
 
+  // Verificar permisos
+  if (!currentUser || !currentUser.canViewGastos) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Gastos
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              No tienes permisos para acceder a esta sección.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -243,6 +291,14 @@ export default function GastosPage() {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(filteredGastos, 'gastos.xlsx', 'Gastos')}
+            className="flex-1 sm:flex-none"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Excel
+          </Button>
           <Sheet open={isCreateSheetOpen} onOpenChange={setIsCreateSheetOpen}>
             <SheetTrigger asChild>
               <Button className="flex-1 sm:flex-none">

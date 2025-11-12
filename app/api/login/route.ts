@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma/client";
 import { cookies } from "next/headers";
-
-const prisma = new PrismaClient();
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import prisma from "@/lib/prisma";
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,21 +19,39 @@ export async function POST(request: NextRequest) {
       where: { email },
     });
 
-    if (!user || user.password !== password) {
+    if (!user || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
         { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
 
-    // Set cookie for session
+    // Generar JWT
+    const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET!,
+      { expiresIn: "1d" }
+    );
+
+    // Set cookies
     const cookieStore = await cookies();
     cookieStore.set("auth", "true", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 60 * 60 * 24, // 1 day
+      path: "/",
     });
+    cookieStore.set("auth-token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24, // 1 day
+      path: "/",
+    });
+
+    console.log("Cookies establecidas correctamente");
+    console.log("Token generado:", token.substring(0, 20) + "...");
 
     return NextResponse.json({
       message: "Login exitoso",
@@ -41,6 +59,7 @@ export async function POST(request: NextRequest) {
         id: user.id,
         nombreCompleto: user.nombreCompleto,
         email: user.email,
+        rol: user.rol,
       },
     });
   } catch (error) {
@@ -49,7 +68,5 @@ export async function POST(request: NextRequest) {
       { error: "Error interno del servidor" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

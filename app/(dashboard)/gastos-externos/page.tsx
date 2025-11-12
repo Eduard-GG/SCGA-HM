@@ -18,7 +18,17 @@ import { ActionCell } from "./GastosExternosTable/ActionCell";
 import { columns, GastoExterno } from "./GastosExternosTable/columns";
 import { DataTable } from "./GastosExternosTable/data-table";
 import { Row } from "@tanstack/react-table";
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportToExcel";
+
+interface CurrentUser {
+  id: number;
+  rol: string;
+  canViewGastos: boolean;
+  canViewGastosExternos: boolean;
+  canViewVehiculos: boolean;
+  canViewUsuarios: boolean;
+}
 
 const ITEMS_PER_PAGE = 10;
 
@@ -39,6 +49,21 @@ export default function GastosExternosPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+
+  // Obtener usuario actual
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await axios.get("/api/user");
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // Si no está autorizado, redirigir al login
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        window.location.href = "/login";
+      }
+    }
+  };
 
   // Función centralizada para refrescar la tabla
   const refreshData = async () => {
@@ -50,6 +75,7 @@ export default function GastosExternosPage() {
   // Cargar datos al montar el componente
   useEffect(() => {
     const loadData = async () => {
+      await fetchCurrentUser();
       await refreshData();
       setLoading(false);
     };
@@ -141,6 +167,22 @@ export default function GastosExternosPage() {
     );
   }
 
+  // Verificar permisos
+  if (!currentUser || !currentUser.canViewGastosExternos) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Gastos Externos</h1>
+            <p className="mt-2 text-muted-foreground">
+              No tienes permisos para acceder a esta sección.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
@@ -150,13 +192,22 @@ export default function GastosExternosPage() {
             Gestión completa de gastos externos ({filteredData.length} de {data.length} registrados)
           </p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Gasto
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            onClick={() => exportToExcel(filteredData, 'gastos-externos.xlsx', 'Gastos Externos')}
+            className="w-full sm:w-auto"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Exportar Excel
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Gasto
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[620px]">
             <DialogHeader>
               <DialogTitle>Agregar Gasto Externo</DialogTitle>
@@ -169,8 +220,9 @@ export default function GastosExternosPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
-      <Card className="bg-white dark:bg-[#171717]">
+    <Card className="bg-white dark:bg-[#171717]">
         <CardHeader>
           <CardTitle>Listado de Gastos Externos</CardTitle>
           <CardDescription>

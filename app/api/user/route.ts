@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma/client";
 import jwt from "jsonwebtoken";
-
-const prisma = new PrismaClient();
+import prisma from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
     // Obtener el token de la cookie
     const token = request.cookies.get("auth-token")?.value;
 
+    console.log("Token recibido:", token ? "Sí" : "No");
+    console.log("Cookies disponibles:", request.cookies.getAll());
+
     if (!token) {
-      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      return NextResponse.json({ error: "No autorizado - Token no encontrado" }, { status: 401 });
     }
 
     // Verificar el token
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
         nombreCompleto: true,
         email: true,
         rol: true,
+        canViewGastos: true,
+        canViewGastosExternos: true,
+        canViewVehiculos: true,
+        canViewUsuarios: true,
       },
     });
 
@@ -43,7 +48,5 @@ export async function GET(request: NextRequest) {
       { error: "Error interno del servidor" },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

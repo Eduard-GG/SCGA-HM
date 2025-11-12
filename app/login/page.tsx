@@ -44,7 +44,7 @@ export default function LoginPage() {
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">
           Sistema de control
           <br />
-          de gastos automotrices
+          de gastos
         </h1>
       </div>
 

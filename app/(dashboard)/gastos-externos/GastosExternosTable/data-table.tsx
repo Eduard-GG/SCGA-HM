@@ -12,6 +12,9 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { exportToExcel } from "@/lib/exportToExcel";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -22,6 +25,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -30,6 +34,15 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="w-full overflow-x-auto">
+      <div className="flex justify-end mb-4">
+        <Button
+          variant="outline"
+          onClick={() => exportToExcel(data, 'gastos-externos.xlsx', 'Gastos Externos')}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Exportar a Excel
+        </Button>
+      </div>
       <Table className="min-w-full">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

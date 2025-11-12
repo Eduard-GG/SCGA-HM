@@ -301,10 +301,10 @@ const GastosExternosForm = ({ onSuccess }: GastosExternosFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="combustible">COMBUSTIBLE</SelectItem>
-                    <SelectItem value="mantenimiento">MANTENIMIENTO</SelectItem>
-                    <SelectItem value="seguros">SEGUROS</SelectItem>
-                    <SelectItem value="multas">MULTAS</SelectItem>
+                    <SelectItem value="refacciones">REFACCIONES</SelectItem>
+                    <SelectItem value="llantas">LLANTAS</SelectItem>
+                    <SelectItem value="verificaciones">VERIFICACIONES</SelectItem>
+                    <SelectItem value="papeleria">PAPELERÍA</SelectItem>
                     <SelectItem value="otros">OTROS</SelectItem>
                   </SelectContent>
                 </Select>
