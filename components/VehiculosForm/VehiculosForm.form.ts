@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const vehiculoFormSchema = z.object({
   marca: z.string().min(1, "La marca es requerida"),
+  nombre: z.string().optional(),
   tipo: z.string().optional(),
   color: z.string().optional(),
   modelo: z.string().optional(),

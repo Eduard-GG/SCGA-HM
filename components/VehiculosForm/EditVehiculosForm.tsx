@@ -20,6 +20,7 @@ import { editVehiculoFormSchema } from "./EditVehiculosForm.form";
 interface Vehiculo {
   id: number;
   marca: string | null;
+  nombre: string | null;
   tipo: string | null;
   modelo: string | null;
   color: string | null;
@@ -44,6 +45,7 @@ const EditVehiculosForm = ({ vehiculo, onSuccess }: EditVehiculosFormProps) => {
     resolver: zodResolver(editVehiculoFormSchema),
     defaultValues: {
       marca: vehiculo.marca || "",
+      nombre: vehiculo.nombre || "",
       tipo: vehiculo.tipo || "",
       color: vehiculo.color || "",
       modelo: vehiculo.modelo || "",
@@ -120,7 +122,24 @@ const EditVehiculosForm = ({ vehiculo, onSuccess }: EditVehiculosFormProps) => {
             )}
           />
 
-          {/* Tipo */}
+          {/* Nombre */}
+          <FormField
+            control={form.control}
+            name="nombre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Nombre..."
+                    className="max-w-sm"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="tipo"

@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     console.log("Cuerpo recibido:", body);
     const {
       marca,
+      nombre,
       tipo,
       color,
       modelo,
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
     console.log("Creando vehículo...");
     const dataToCreate = {
       marca,
+      nombre: nombre || null,
       tipo: tipo || null,
       color: color || null,
       modelo: modelo || null,

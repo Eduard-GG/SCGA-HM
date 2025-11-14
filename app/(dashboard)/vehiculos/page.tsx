@@ -24,6 +24,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Sheet,
@@ -42,6 +43,7 @@ import {
   ChevronRight,
   Search,
   Filter,
+  Trash,
 } from "lucide-react";
 import VehiculosForm from "@/components/VehiculosForm/VehiculosForm";
 import EditVehiculosForm from "@/components/VehiculosForm/EditVehiculosForm";
@@ -50,6 +52,7 @@ import axios from "axios";
 interface Vehiculo {
   id: number;
   marca: string | null;
+  nombre: string | null;
   tipo: string | null;
   modelo: string | null;
   color: string | null;
@@ -73,23 +76,6 @@ interface CurrentUser {
   canViewUsuarios: boolean;
 }
 
-interface Vehiculo {
-  id: number;
-  marca: string | null;
-  tipo: string | null;
-  modelo: string | null;
-  color: string | null;
-  placas: string;
-  ubicacion: string | null;
-  motor: string | null;
-  serie: string;
-  eco: string | null;
-  contrato: string | null;
-  estatus: string | null;
-  agencia: string | null;
-  proyecto: string | null;
-}
-
 const ITEMS_PER_PAGE = 10;
 
 export default function VehiculosPage() {
@@ -103,6 +89,10 @@ export default function VehiculosPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedVehiculo, setSelectedVehiculo] = useState<Vehiculo | null>(
+    null
+  );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [vehiculoToDelete, setVehiculoToDelete] = useState<Vehiculo | null>(
     null
   );
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -147,17 +137,18 @@ export default function VehiculosPage() {
       const matchesSearch =
         searchTerm === "" ||
         vehiculo.marca?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vehiculo.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vehiculo.modelo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vehiculo.placas?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vehiculo.serie?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         vehiculo.proyecto?.toLowerCase().includes(searchTerm.toLowerCase());
 
-      // Filtro por tipo (GM/HM/RF)
+      // Filtro por tipo (GM/HM/RF/RC)
       const matchesType =
         filterType === "all" ||
         (filterType === "gm" && vehiculo.tipo === "GM") ||
         (filterType === "hm" && vehiculo.tipo === "HM") ||
-        (filterType === "rf" && vehiculo.tipo === "RF");
+        (filterType === "rf" && (vehiculo.tipo === "RF" || vehiculo.tipo === "RC"));
 
       return matchesSearch && matchesType;
     });
@@ -225,6 +216,18 @@ export default function VehiculosPage() {
     setIsEditDialogOpen(false);
     setSelectedVehiculo(null);
     fetchVehiculos();
+  };
+
+  const handleDeleteVehiculo = async () => {
+    if (!vehiculoToDelete) return;
+    try {
+      await axios.delete(`/api/vehiculos/${vehiculoToDelete.id}`);
+      setIsDeleteDialogOpen(false);
+      setVehiculoToDelete(null);
+      fetchVehiculos();
+    } catch (error) {
+      console.error("Error deleting vehiculo:", error);
+    }
   };
 
   if (loading) {
@@ -318,6 +321,29 @@ export default function VehiculosPage() {
           )}
         </SheetContent>
       </Sheet>{" "}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar Vehículo</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que quieres eliminar el vehículo{" "}
+              {vehiculoToDelete?.marca} {vehiculoToDelete?.modelo}? Esta acción
+              no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteVehiculo}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Card>
         <CardHeader>
           <CardTitle>Listado de Vehículos</CardTitle>
@@ -332,7 +358,7 @@ export default function VehiculosPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                 <Input
-                  placeholder="Buscar por marca, modelo, placas, serie o proyecto..."
+                  placeholder="Buscar por marca, nombre, modelo, placas, serie o proyecto..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -365,6 +391,16 @@ export default function VehiculosPage() {
                 GM
               </Button>
               <Button
+                variant={filterType === "rf" ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setFilterType("rf");
+                  handleFilterChange();
+                }}
+              >
+                RF/RC
+              </Button>
+              <Button
                 variant={filterType === "hm" ? "default" : "outline"}
                 size="sm"
                 onClick={() => {
@@ -373,16 +409,6 @@ export default function VehiculosPage() {
                 }}
               >
                 HM
-              </Button>
-              <Button
-                variant={filterType === "rf" ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setFilterType("rf");
-                  handleFilterChange();
-                }}
-              >
-                RF
               </Button>
             </div>
           </div>
@@ -402,6 +428,7 @@ export default function VehiculosPage() {
                       <TableHead className="w-[60px]">ID</TableHead>
                       <TableHead className="w-[50px]">Tipo</TableHead>
                       <TableHead className="min-w-[100px]">Marca</TableHead>
+                      <TableHead className="min-w-[100px]">Nombre</TableHead>
                       <TableHead className="min-w-[100px]">Modelo</TableHead>
                       <TableHead className="min-w-[100px]">Placas</TableHead>
                       {showStatusColumn && (
@@ -434,6 +461,9 @@ export default function VehiculosPage() {
                         </TableCell>
                         <TableCell className="truncate max-w-[100px]">
                           {vehiculo.marca || "-"}
+                        </TableCell>
+                        <TableCell className="truncate max-w-[100px]">
+                          {vehiculo.nombre || "-"}
                         </TableCell>
                         <TableCell className="truncate max-w-[100px]">
                           {vehiculo.modelo || "-"}
@@ -490,10 +520,10 @@ export default function VehiculosPage() {
                                   </div>
                                   <div>
                                     <label className="text-sm font-medium">
-                                      Tipo
+                                      Nombre
                                     </label>
                                     <p className="text-sm text-muted-foreground">
-                                      {vehiculo.tipo || "-"}
+                                      {vehiculo.nombre || "-"}
                                     </p>
                                   </div>
                                   <div>
@@ -594,6 +624,17 @@ export default function VehiculosPage() {
                               onClick={() => handleEditVehiculo(vehiculo)}
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                setVehiculoToDelete(vehiculo);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
                         </TableCell>

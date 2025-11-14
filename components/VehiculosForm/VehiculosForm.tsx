@@ -26,6 +26,7 @@ const VehiculosForm = ({ onSuccess }: VehiculosFormProps) => {
     resolver: zodResolver(vehiculoFormSchema),
     defaultValues: {
       marca: "",
+      nombre: "",
       tipo: "",
       color: "",
       modelo: "",
@@ -97,7 +98,24 @@ const VehiculosForm = ({ onSuccess }: VehiculosFormProps) => {
             )}
           />
 
-          {/* Tipo */}
+          {/* Nombre */}
+          <FormField
+            control={form.control}
+            name="nombre"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="Nombre..."
+                    className="max-w-sm"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="tipo"

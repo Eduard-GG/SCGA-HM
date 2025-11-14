@@ -24,6 +24,7 @@ export async function PUT(
 
     const {
       marca,
+      nombre,
       tipo,
       color,
       modelo,
@@ -46,6 +47,7 @@ export async function PUT(
     // Convertir strings vacías a null para campos opcionales
     const cleanData = {
       marca: marca?.trim() || null,
+      nombre: nombre?.trim() || null,
       tipo: tipo?.trim() || null,
       color: color?.trim() || null,
       modelo: modelo?.trim() || null,
@@ -65,6 +67,7 @@ export async function PUT(
     // Extraer valores limpios
     const {
       marca: cleanMarca,
+      nombre: cleanNombre,
       tipo: cleanTipo,
       color: cleanColor,
       modelo: cleanModelo,
@@ -137,6 +140,7 @@ export async function PUT(
     console.log("Actualizando vehículo...");
     const dataToUpdate = {
       marca: cleanMarca,
+      nombre: cleanNombre,
       tipo: cleanTipo,
       color: cleanColor,
       modelo: cleanModelo,

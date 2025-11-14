@@ -22,6 +22,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 interface Vehiculo {
   id: number;
   marca: string | null;
+  nombre: string | null;
   modelo: string | null;
   placas: string;
   proyecto: string | null;
@@ -54,6 +55,8 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [loadingVehiculos, setLoadingVehiculos] = useState(true);
   const [isResponsableFilled, setIsResponsableFilled] = useState(false);
+  const [placaQuery, setPlacaQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const form = useForm<z.infer<typeof gastoFormSchema>>({
     resolver: zodResolver(gastoFormSchema),
@@ -90,9 +93,22 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
     updateProyecto();
   }, [updateProyecto]);
 
+  useEffect(() => {
+    setPlacaQuery(watchedPlaca || "");
+  }, [watchedPlaca]);
+
   const filteredVehiculos = useMemo(() => {
     return vehiculos.filter(v => v.placas && v.placas.trim());
   }, [vehiculos]);
+
+  const filteredSuggestions = useMemo(() => {
+    if (!placaQuery.trim()) return [];
+    return filteredVehiculos.filter(v =>
+      v.placas.toLowerCase().includes(placaQuery.toLowerCase()) ||
+      (v.marca && v.marca.toLowerCase().includes(placaQuery.toLowerCase())) ||
+      (v.modelo && v.modelo.toLowerCase().includes(placaQuery.toLowerCase()))
+    ).slice(0, 10); // Limitar a 10 sugerencias
+  }, [placaQuery, filteredVehiculos]);
 
   // Cargar vehículos para el dropdown
   useEffect(() => {
@@ -316,20 +332,47 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Vehículo (Placas)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={loadingVehiculos}>
+                <div className="relative">
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder={loadingVehiculos ? "Cargando vehículos..." : "Selecciona un vehículo"} />
-                    </SelectTrigger>
+                    <Input
+                      placeholder={loadingVehiculos ? "Cargando vehículos..." : "Escribe placas, marca o modelo..."}
+                      className="max-w-sm"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        setPlacaQuery(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                      disabled={loadingVehiculos}
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {filteredVehiculos.map((vehiculo) => (
-                      <SelectItem key={vehiculo.id} value={vehiculo.placas}>
-                        {vehiculo.placas} - {vehiculo.marca} {vehiculo.modelo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {showSuggestions && filteredSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full max-w-sm bg-popover border border-border rounded-md shadow-md mt-1 max-h-40 overflow-y-auto">
+                      {filteredSuggestions.map((vehiculo) => (
+                        <div
+                          key={vehiculo.id}
+                          className="px-3 py-2 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
+                          onClick={() => {
+                            field.onChange(vehiculo.placas);
+                            setPlacaQuery(vehiculo.placas);
+                            setShowSuggestions(false);
+                            // Actualizar proyecto automáticamente
+                            if (vehiculo.proyecto) {
+                              form.setValue("proyecto", vehiculo.proyecto);
+                            }
+                          }}
+                        >
+                          <div className="font-medium">{vehiculo.placas}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {vehiculo.nombre ? `${vehiculo.nombre} - ` : ""}{vehiculo.marca} {vehiculo.modelo}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -394,11 +437,11 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="combustible">Combustible</SelectItem>
-                    <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
-                    <SelectItem value="seguros">Seguros</SelectItem>
-                    <SelectItem value="multas">Multas</SelectItem>
-                    <SelectItem value="otros">Otros</SelectItem>
+                    <SelectItem value="REFACCIONES">REFACCIONES</SelectItem>
+                    <SelectItem value="LLANTAS">LLANTAS</SelectItem>
+                    <SelectItem value="VERIFICACIONES">VERIFICACIONES</SelectItem>
+                    <SelectItem value="PAPELERÍA">PAPELERÍA</SelectItem>
+                    <SelectItem value="OTROS">OTROS</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

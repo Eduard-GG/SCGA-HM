@@ -32,6 +32,7 @@ model Usuario {
 model Vehiculo {
   id         Int      @id @default(autoincrement())
   marca      String
+  nombre     String?
   tipo       String?
   color      String?
   modelo     String?
