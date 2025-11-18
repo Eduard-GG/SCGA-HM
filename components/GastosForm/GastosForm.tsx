@@ -54,7 +54,6 @@ type GastosFormProps = {
 const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [loadingVehiculos, setLoadingVehiculos] = useState(true);
-  const [isResponsableFilled, setIsResponsableFilled] = useState(false);
   const [placaQuery, setPlacaQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -126,33 +125,6 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
 
     fetchVehiculos();
   }, []);
-
-  // Cargar información del usuario actual
-  useEffect(() => {
-    const fetchCurrentUser = async () => {
-      try {
-        const response = await axios.get('/api/user');
-        // Establecer el responsable automáticamente si no hay uno definido y no es edición
-        if (!gasto && response.data.nombreCompleto) {
-          form.setValue("responsable", response.data.nombreCompleto);
-          setIsResponsableFilled(true);
-        } else if (gasto && gasto.responsable) {
-          // Si es edición y ya tiene responsable, deshabilitar el campo
-          setIsResponsableFilled(true);
-        }
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 401) {
-          // Usuario no autenticado - permitir edición manual
-          console.log('Usuario no autenticado - campo responsable editable manualmente');
-          setIsResponsableFilled(false);
-        } else {
-          console.error('Error fetching current user:', error);
-        }
-      }
-    };
-
-    fetchCurrentUser();
-  }, [form, gasto]);
 
   const onSubmit = useCallback(async (values: z.infer<typeof gastoFormSchema>) => {
     try {
@@ -401,7 +373,7 @@ const GastosForm = ({ onSuccess, gasto }: GastosFormProps) => {
               <FormItem>
                 <FormLabel>Responsable</FormLabel>
                 <FormControl>
-                  <Input placeholder="Responsable..." className="max-w-sm" {...field} disabled={isResponsableFilled} />
+                  <Input placeholder="Responsable..." className="max-w-sm" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
